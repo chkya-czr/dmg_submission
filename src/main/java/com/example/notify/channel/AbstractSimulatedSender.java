@@ -6,10 +6,15 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Shared behavior for the simulated channel senders: logs the attempt and randomly fails
- * ("transient", retryable) based on a per-tenant {@code failureRate} (0..1, from channel_config),
- * falling back to {@link #defaultFailureRate}. A {@code channelConfig} value of
- * {@code alwaysFail=true} simulates a permanent, non-retryable failure (e.g. bad address).
+ * Shared behavior for the simulated channel senders: logs the attempt and fails ("transient",
+ * retryable) according to channel_config, in priority order:
+ * <ol>
+ *   <li>{@code alwaysFail=true} - permanent, non-retryable failure (e.g. simulates a bad address)</li>
+ *   <li>{@code failUntilAttempt=N} - deterministically fails (retryable) while the attempt number
+ *       is &lt;= N, then succeeds - lets tests exercise "fails twice then succeeds" without
+ *       depending on randomness</li>
+ *   <li>{@code failureRate=0..1} (or {@link #defaultFailureRate} if unset) - random transient failure</li>
+ * </ol>
  */
 abstract class AbstractSimulatedSender implements ChannelSender {
 
@@ -29,6 +34,20 @@ abstract class AbstractSimulatedSender implements ChannelSender {
             log.info("[{}] simulated permanent failure to={} attemptToken={}", channel(),
                     request.recipientAddress(), request.attemptToken());
             return SendResult.permanentFailure("Simulated permanent failure (alwaysFail=true)");
+        }
+
+        String failUntilAttempt = config.get("failUntilAttempt");
+        if (failUntilAttempt != null) {
+            int threshold = Integer.parseInt(failUntilAttempt);
+            if (request.attemptNumber() <= threshold) {
+                log.info("[{}] simulated deterministic failure (attempt {} <= failUntilAttempt {}) to={} attemptToken={}",
+                        channel(), request.attemptNumber(), threshold, request.recipientAddress(), request.attemptToken());
+                return SendResult.retryableFailure(
+                        "Simulated deterministic failure (attempt " + request.attemptNumber() + " <= failUntilAttempt=" + threshold + ")");
+            }
+            log.info("[{}] sent to={} subject={} attemptToken={}", channel(), request.recipientAddress(),
+                    request.subject(), request.attemptToken());
+            return SendResult.ok();
         }
 
         double failureRate = defaultFailureRate;

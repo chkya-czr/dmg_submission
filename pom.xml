@@ -77,6 +77,13 @@
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- TestRestTemplate's default JDK-based client can't send PATCH requests; having Apache
+         HttpClient5 on the test classpath makes Spring Boot auto-select it instead. -->
+    <dependency>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

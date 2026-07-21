@@ -59,7 +59,7 @@ public class DeliveryDispatchTask {
 
         int attemptNumber = delivery.getAttemptCount() + 1;
         String attemptToken = UUID.randomUUID().toString();
-        SendResult result = attempt(delivery, attemptToken);
+        SendResult result = attempt(delivery, attemptNumber, attemptToken);
         Instant now = clock.instant();
 
         int rowsAffected;
@@ -86,14 +86,14 @@ public class DeliveryDispatchTask {
                 DeliveryStatus.PROCESSING, toStatus, result.errorMessage(), workerId));
     }
 
-    private SendResult attempt(NotificationDelivery delivery, String attemptToken) {
+    private SendResult attempt(NotificationDelivery delivery, int attemptNumber, String attemptToken) {
         EffectiveChannelConfig channelConfig = channelConfigService.getEffective(delivery.getTenantId(), delivery.getChannel());
         if (!channelConfig.enabled()) {
             return SendResult.retryableFailure("Channel " + delivery.getChannel() + " is disabled for this tenant");
         }
         try {
             SendRequest request = new SendRequest(delivery.getRecipientAddress(), delivery.getRenderedSubject(),
-                    delivery.getRenderedBody(), attemptToken, channelConfig.config());
+                    delivery.getRenderedBody(), attemptToken, attemptNumber, channelConfig.config());
             return channelSenderRegistry.get(delivery.getChannel()).send(request);
         } catch (Exception e) {
             log.warn("ChannelSender threw for delivery {}", delivery.getId(), e);
