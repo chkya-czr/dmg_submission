@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:notify-test-${random.uuid};DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+notify:
+  seed:
+    platform-admin-username: platform-admin
+    platform-admin-password: ChangeMe123!
+  dispatch:
+    worker-pool-size: 4
+    expansion-poll-interval-ms: 150
+    dispatch-poll-interval-ms: 100
+    sweep-interval-ms: 2000
+    stuck-claim-threshold-seconds: 5
+    expansion-batch-size: 50
+  retry:
+    base-delay-seconds: 1
+    max-delay-seconds: 5
+  ratelimit:
+    default-rate-limit-per-minute: 60
+    default-burst-capacity: 10
+    default-max-retry-attempts: 5
+
+logging:
+  level:
+    com.example.notify: INFO
