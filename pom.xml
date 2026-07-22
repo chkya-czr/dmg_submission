@@ -101,6 +101,22 @@
           </excludes>
         </configuration>
       </plugin>
+      <!-- Unit tests (*Test.java) run via surefire during `mvn test`. Integration tests
+           (*IT.java) run via failsafe during `mvn verify`, after the app's jar would be built -
+           the standard Maven convention for keeping fast unit tests separate from slower,
+           full-Spring-context integration tests. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

@@ -25,9 +25,10 @@ class RateLimitAndFairnessIT extends AbstractIntegrationTest {
 
         createTemplate(client, tenantId, "blast", "IN_APP", null, "Hi {{userName}}", List.of("userName"));
 
-        // 0.1 tokens/sec, burst of 1: only ~1 of the 5 recipients can go out immediately.
+        // 2 tokens/sec, burst of 1: only 1 of the 5 recipients can go out immediately, the rest
+        // trickle out roughly one every 500ms.
         asPlatformAdmin().exchange("/api/platform/tenants/" + tenantId + "/limits", HttpMethod.PUT,
-                new HttpEntity<>(Map.of("rateLimitPerMinute", 6, "burstCapacity", 1), jsonHeaders()), Map.class);
+                new HttpEntity<>(Map.of("rateLimitPerMinute", 120, "burstCapacity", 1), jsonHeaders()), Map.class);
 
         List<Map<String, Object>> recipients = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
